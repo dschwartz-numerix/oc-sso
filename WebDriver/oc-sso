@@ -33,9 +33,9 @@ def main():
         help='AnyConnect version for authentication and OpenConnect '
              '(default:  %(default)s)')
     parser.add_argument(
-        '--webdriver', choices=['chromedriver', 'geckodriver'], default='',
+        '--webdriver', choices=['chromedriver', 'geckodriver', 'msedgedriver'], default='',
         help='WebDriver implementation to use: '
-             'chromedriver for Chrome/Chromium or geckodriver for Firefox '
+             'chromedriver for Chrome/Chromium, geckodriver for Firefox or msedgedriver for Edge'
              '(default is to try both)')
     parser.add_argument(
         '--sso-timeout', type=int, default='120',
@@ -297,7 +297,7 @@ class WebDriver:
         if driver:
             self.driver = driver
             return
-        for d in ['chromedriver', 'geckodriver']:
+        for d in ['chromedriver', 'geckodriver', 'msedgedriver']:
             if shutil.which(d):
                 log.debug('Using %r', d)
                 self.driver = d
@@ -328,7 +328,7 @@ class WebDriver:
             self.DeleteSession()
         finally:
             # stop driver
-            if self.driver == 'chromedriver':
+            if self.driver == 'chromedriver' or self.driver == 'msedgedriver':
                 self.command('GET', '/shutdown')
             else:  # geckodriver
                 # (see https://github.com/mozilla/geckodriver/issues/771)
@@ -402,8 +402,11 @@ class WebDriver:
             raise ConnectionError('Could not connect to WebDriver')
         self.id = '/session/' + value['sessionId']
         cap = value['capabilities']
+
         if self.driver == 'chromedriver':
             self.profile = cap['chrome']['userDataDir']
+        elif self.driver == 'msedgedriver':
+            self.profile = cap['msedge']['userDataDir']
         else:  # geckodriver
             self.profile = cap['moz:profile']
         log.debug('Browser profile: %s', self.profile)
